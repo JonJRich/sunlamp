@@ -1,7 +1,8 @@
 from gpiozero import PWMLED, TimeOfDay
-from datetime import time
+from datetime import time, datetime
 from time import sleep
 from signal import pause 
+
 
 ledbright = PWMLED(13)
 ledwarm = PWMLED(17)
@@ -54,30 +55,72 @@ print("Temperature zones GO!")
 
 #Temperature zones throughout the day
 
-night_zone = TimeOfDay(time(21,2,0,0), time(21,3,0,0)) # warm white
-day_zone = TimeOfDay(time(21,3,0,0), time(23)) # bright white
+night_zone = TimeOfDay(time(9), time(2)) # warm white
+day_zone = TimeOfDay(time(2), time(9)) # bright white
 
 print("Zone times GO!")
 
 #GO!
 
-print("GO!")
+#Convbert times to strings
 
-night_zone.when_activated = night_temp
-day_zone.when_activated = day_temp
+now = datetime.now()
+
+current_time = now.strftime("%H:%M:%S")
+night_zone_start = night_zone.start_time
+night_zone_end = night_zone.end_time
+day_zone_start = day_zone.start_time
+day_zone_end = day_zone.end_time
+
+night_start = night_zone_start.strftime("%H:%M:%S")
+night_end = night_zone_end.strftime("%H:%M:%S")
+day_start = day_zone_start.strftime("%H:%M:%S")
+day_end = day_zone_end.strftime("%H:%M:%S")
+
+
+#Check Day, even if it crosses midnight
+
+def check_day_zone():
+    if current_time > day_start and day_end > current_time:
+        print("Day zone activated")
+        day_temp()
+
+def check_day_zone_24():
+    if current_time > day_start or day_end > current_time:
+        print("Day zone activated")
+        day_temp()
+
+def day_check_24():
+    if day_start < day_end:
+        check_day_zone()
+    else: 
+        check_day_zone_24()
+
+#Check Night, even if it crosses midnight
+
+def check_night_zone():
+    if current_time > night_start and night_end > current_time:
+        print("Night zone activated")
+        night_temp()
+
+def check_night_zone_24():
+    if current_time > night_start or night_end > current_time:
+        print("Night zone activated")
+        night_temp()
+
+def night_check_24():
+    if night_start < night_end:
+        check_night_zone()
+    else: 
+        check_night_zone_24()
+
+# Check booth zones at once
+        
+
+day_check_24()
+night_check_24()
+
+# night_zone.when_activated = night_temp
+# day_zone.when_activated = day_temp
 
 pause ()
-
-
-
-# MINIMUM_TEMP + ((MAXIMUM_TEMP-MINIMUM_TEMP)*(x/60))
-# MAXIMUM_TEMP - ((MAXIMUM_TEMP-MINIMUM_TEMP)*(x/60))
-
-# MINIMUM_TEMP = 3000
-# MAXIMUM_TEMP = 6000
-# MAXIMUM_BRIGHTNESS = 1.0
-
-#temperature = 0
-
-# def set_temp(temp_to_set_to):
-  #  global temperature 
