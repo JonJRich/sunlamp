@@ -2,36 +2,55 @@ from gpiozero import PWMLED, TimeOfDay
 from datetime import time, datetime
 from time import sleep
 from signal import pause 
+import os
 
+#### DEFINE INPUTS
 
+print("Defining inputs")
 
-####DEFINE PARAMETERS
+def parse_zone_configs(val):
+    return datetime.strptime(val,'%H:%M')
 
-#Define LED inputs
-ledbright = PWMLED(13)
-ledwarm = PWMLED(17)
+LED_PIN_BRIGHT = 13
+LED_PIN_WARM = 17
 
-#Define time zones
-on_zone = TimeOfDay(time(8,0,0,0), time(22,0,0,0)) # lamp on
-off_zone = TimeOfDay(time(22,0,0,0), time(8,0,0,0)) # lamp off
-day_zone = TimeOfDay(time(11,0,0,0), time(12,0,0,0)) # bright white
-night_zone = TimeOfDay(time(12,0,0,0), time(13,0,0,0)) # warm white
+LAMP_ON_START = parse_zone_configs(os.getenv("LAMP_ON_START","8:00"))
+LAMP_OFF_START = parse_zone_configs(os.getenv("LAMP_OFF_START","20:00"))
+
+LAMP_WARM_START = parse_zone_configs(os.getenv("LAMP_WARM_START","16:00"))
+LAMP_BRIGHT_START = parse_zone_configs(os.getenv("LAMP_BRIGHT_START","9:00"))
+
+####DEFINE INSTANCES
+
+#Define LEDs
+print("Initialise LED instances")
+ledbright = PWMLED(LED_PIN_BRIGHT)
+ledwarm = PWMLED(LED_PIN_WARM)
+
+#Define lamp state times
+print("Initialise lamp state times")
+on_zone = TimeOfDay(LAMP_ON_START, LAMP_OFF_START) # lamp on
+off_zone = TimeOfDay(LAMP_OFF_START, LAMP_ON_START) # lamp off
+
+#Define lamp temperature times
+print("Initialise lamp temperature times")
+bright_zone = TimeOfDay(LAMP_BRIGHT_START, LAMP_WARM_START) # bright white
+warm_zone = TimeOfDay(LAMP_WARM_START, LAMP_BRIGHT_START) # warm white
 
 #Define fade time from colour temperatures and on/off fade
-temp_fade = 120 #seconds
+print("Initialise lamp fade duration")
+FADE_DURATION = int(os.getenv("FADE_DURATION","30")) #seconds
 
 print("Parameters defined")
-
-
 
 ###DEFINE FUNCTIONS
 
 #Temperature settings
-def night_temp():
+def warm_on():
     ledwarm.value = 1
     ledbright.value = 0
 
-def day_temp():
+def bright_on():
     ledbright.value = 1
     ledwarm.value = 0
 
@@ -41,158 +60,74 @@ def lamp_off():
     ledbright.value = 0
 
 #Fade settings
-
-def fade_on_day(duration):
+def fade_on_bright(duration):
     ledbright.pulse(duration,0,1, False)
     ledbright.value = 1
 
-def fade_on_night(duration):
+def fade_on_warm(duration):
     ledwarm.pulse(duration,0,1, False)
     ledwarm.value = 1
 
-def fade_off_night(duration):
+def fade_off_warm(duration):
     ledwarm.pulse(0,duration,1, False)
     ledwarm.value = 0
 
-def fade_to_day_temp(duration):
+def fade_warm_to_bright(duration):
     ledwarm.value = 1
     ledwarm.pulse(0,duration,1)
     ledbright.pulse(duration,0,1,False)
     ledbright.value = 1
 
-def fade_to_night_temp(duration):
+def fade_bright_to_warm(duration):
     ledbright.value = 1
     ledbright.pulse(0,duration,1)
     ledwarm.pulse(duration,0,1,False)
     ledwarm.value = 1
 
-#Temperature zone settings
-def day_on():
-    fade_on_day(temp_fade)
-    day_temp()
-
-def night_on():
-    fade_on_night(temp_fade)
-    night_off()
-
-def night_off():
-    fade_off_night(temp_fade)
-    lamp_off()
-
-def sunrise_temp():
-    night_temp()
-    fade_to_day_temp(temp_fade)
-    day_temp()
-
-def sunset_temp():
-    day_temp()
-    fade_to_night_temp(temp_fade)
-    night_temp()
-
-#Check Day and Lamp On, even if it crosses midnight
-def check_day_zone():
-    if current_time > day_start and day_end > current_time and current_time > on_start and on_end > current_time:
-        print("Day zone activated")
-        day_on()
-
-def check_day_zone_24():
-    if current_time > day_start or day_end > current_time and current_time > on_start and on_end > current_time:
-        print("Day zone activated")
-        day_on()
-
-def day_check_24():
-    if day_start < day_end:
-        check_day_zone()
-    else: 
-        check_day_zone_24()
-
-#Check Night, even if it crosses midnight
-def check_night_zone():
-    if current_time > night_start and night_end > current_time and current_time > on_start and on_end > current_time:
-        print("Night zone activated")
-        night_temp()
-
-def check_night_zone_24():
-    if current_time > night_start or night_end > current_time and current_time > on_start and on_end > current_time:
-        print("Night zone activated")
-        night_temp()
-
-def night_check_24():
-    if night_start < night_end:
-        check_night_zone()
-    else: 
-        check_night_zone_24()
-
 def test_cycle():
-    print("Fade on night")
-    fade_on_night(temp_fade)
+    print("-Fade on night")
+    fade_on_warm(FADE_DURATION)
     sleep(5)
-    print("Sunrise start")
-    sunrise_temp()
+    print("--Sunrise start")
+    fade_warm_to_bright(FADE_DURATION)
     sleep(5)
-    print("Day start")
-    day_temp()
-    sleep(temp_fade)
-    print("Sunsset start")
-    sunset_temp()
+    print("---Daytime")
+    bright_on()
     sleep(5)
-    print("Night start")
-    night_temp()
-    sleep(temp_fade)
-    fade_off_night(temp_fade)
-    sleep(temp_fade)
-
-
-#print("Functions defined")
+    print("----Sunsset start")
+    fade_bright_to_warm(FADE_DURATION)
+    sleep(5)
+    print("-----Nighttime")
+    warm_on()
+    sleep(5)
+    print("------Turning off...")
+    fade_off_warm(FADE_DURATION)
+    sleep(5)
+    print("Test cycle complete")
 
 ###RUNNING SCRIPT
 
 print("Running mood lamp")
 
-#Check current time and convert all times to strings 
-now = datetime.now()
-
-current_time = now.strftime("%H:%M:%S")
-
-night_zone_start = night_zone.start_time
-night_zone_end = night_zone.end_time
-
-day_zone_start = day_zone.start_time
-day_zone_end = day_zone.end_time
-
-off_zone_start = off_zone.start_time
-off_zone_end = off_zone.end_time
-
-on_zone_start = on_zone.start_time
-on_zone_end = on_zone.end_time
-
-
-night_start = night_zone_start.strftime("%H:%M:%S")
-night_end = night_zone_end.strftime("%H:%M:%S")
-
-day_start = day_zone_start.strftime("%H:%M:%S")
-day_end = day_zone_end.strftime("%H:%M:%S")
-
-off_start = off_zone_start.strftime("%H:%M:%S")
-off_end = off_zone_end.strftime("%H:%M:%S")
-
-on_start = on_zone_start.strftime("%H:%M:%S")
-on_end = on_zone_end.strftime("%H:%M:%S")
-
-print("Checking times")
-
-day_check_24()
-night_check_24()
-
-#print("Running test loop")
+#print("Running test cycle")
 #test_cycle()
-#print("Finished test loop")
+
+#Check if lamp is not in off zone
+if not off_zone.is_active:
+    # if day zone active, do x
+    if bright_zone.is_active:
+        print("manually setting Bright Zone")
+        fade_on_bright(FADE_DURATION)
+    # if night zone active, do y
+    else:
+        print("manually setting Warm Zone")
+        fade_on_warm(FADE_DURATION)
 
 print("listening mode started")
 
-on_zone.when_activated = night_on
-night_zone.when_activated = sunset_temp
-day_zone.when_activated = sunrise_temp
-off_zone.when_activated = night_off
+on_zone.when_activated = fade_on_warm(FADE_DURATION)
+warm_zone.when_activated = fade_bright_to_warm(FADE_DURATION)
+bright_zone.when_activated = fade_warm_to_bright(FADE_DURATION)
+off_zone.when_activated = fade_off_warm(FADE_DURATION)
 
 pause ()
