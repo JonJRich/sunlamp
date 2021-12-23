@@ -11,8 +11,8 @@ print("Defining inputs")
 def parse_zone_configs(val):
     return datetime.strptime(val,'%H:%M')
 
-LED_PIN_BRIGHT = 13
-LED_PIN_WARM = 17
+LED_PIN_BRIGHT = os.getenv("LED_PIN_BRIGHT",13)
+LED_PIN_WARM = os.getenv("LED_PIN_WARM",17)
 
 LAMP_ON_START = parse_zone_configs(os.getenv("LAMP_ON_START","7:00"))
 LAMP_OFF_START = parse_zone_configs(os.getenv("LAMP_OFF_START","20:00"))
@@ -29,17 +29,13 @@ ledwarm = PWMLED(LED_PIN_WARM)
 
 #Define lamp state times
 print("Initialise lamp state times")
-on_zone = TimeOfDay(time(7), time(20)) # lamp on
-off_zone = TimeOfDay(time(20), time(7)) # lamp off
-#on_zone = TimeOfDay(LAMP_ON_START, LAMP_OFF_START) # lamp on
-#off_zone = TimeOfDay(LAMP_OFF_START, LAMP_ON_START) # lamp off
+on_zone = TimeOfDay(LAMP_ON_START, LAMP_OFF_START) # lamp on
+off_zone = TimeOfDay(LAMP_OFF_START, LAMP_ON_START) # lamp off
 
 #Define lamp temperature times
 print("Initialise lamp temperature times")
-bright_zone = TimeOfDay(time(9), time(16)) # bright white
-warm_zone = TimeOfDay(time(16), time(9)) # warm white
-#bright_zone = TimeOfDay(LAMP_BRIGHT_START, LAMP_WARM_START) # bright white
-#warm_zone = TimeOfDay(LAMP_WARM_START, LAMP_BRIGHT_START) # warm white
+bright_zone = TimeOfDay(LAMP_BRIGHT_START, LAMP_WARM_START) # bright white
+warm_zone = TimeOfDay(LAMP_WARM_START, LAMP_BRIGHT_START) # warm white
 
 #Define fade time from colour temperatures and on/off fade
 print("Initialise lamp fade duration")
@@ -90,7 +86,7 @@ def fade_bright_to_warm(duration):
 
 #Temperature zone settings
 def fade_bright_stay_on():
-    print("Function activated --- Fade on brightFade on bright")
+    print("Function activated --- Fade on bright")
     fade_on_bright(FADE_DURATION)
     bright_on()
 
