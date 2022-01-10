@@ -11,12 +11,12 @@ post-provisioning: >-
   The time its takes for the lamp to fade on/off and to transition between Warm/Bright and back can also be configured.
 
   For full details, see [README](https://github.com/JonJRich/sunlamp#readme)
-  
+
 assets:
   repository:
     type: blob.asset
     data:
-      url: 'https://github.com/JonJRich/sunlamp.git'
+      url: 'https://github.com/JonJRich/sunlamp'
   logo:
     type: blob.asset
     data:
