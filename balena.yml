@@ -1,0 +1,40 @@
+name: sunlamp
+type: sw.application
+joinable: false
+description: >-
+  Sunlamp is a Raspberry Pi powered ambient lamp that can be programmed to mimic the natural light cycle of the sun using Warm White and Bright White LED strips.
+post-provisioning: >-
+  ## Scheduling the On/Off and Warm/Bright timelines
+
+  The Sunlamp code contains two concurrent but independent timelines, one for **on/off** and one for **Warm/Bright**.
+
+  The time its takes for the lamp to fade on/off and to transition between Warm/Bright and back can also be configured.
+
+  For full details, see [README](https://github.com/JonJRich/sunlamp#readme)
+assets:
+  repository:
+    type: blob.asset
+    data:
+      url: 'https://github.com/JonJRich/sunlamp.git'
+  logo:
+    type: blob.asset
+    data:
+      url: >-
+        https://raw.githubusercontent.com/JonJRich/sunlamp/master/assets/sunlamp_logo_01.png
+data:
+  applicationEnvironmentVariables:
+    - LED_PIN_WARM: 17
+    - LED_PIN_BRIGHT: 13
+    - LAMP_ON_START: 7:00
+    - LAMP_BRIGHT_START: 9:00
+    - LAMP_WARM_START: 16:00
+    - LAMP_OFF_START: 20:00
+    - FADE_DURATION: 30
+  defaultDeviceType: raspberrypi3
+  supportedDeviceTypes:
+    - raspberrypi3
+© 2022 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
